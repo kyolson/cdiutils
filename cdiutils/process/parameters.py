@@ -28,7 +28,9 @@ AUTHORIZED_KEYS = {
         "show_phasing_results": False,
         "unwrap_before_orthogonalization": False,
         "noise_threshold": None,
-        "floor": None
+        "floor": None,
+        "remove_constant": None,
+        "slice_or_sum": "slice"
     },
     "pynx": {
         "data": None,

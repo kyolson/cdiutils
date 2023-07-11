@@ -86,7 +86,8 @@ def preprocessing_detector_data_plot(
         det_reference_voxel: np.ndarray or list or tuple=None,
         det_max_voxel: np.ndarray or list or tuple=None,
         det_com_voxel: np.ndarray or list or tuple=None,
-        title: str=""
+        title: str="",
+        slice_or_sum: str="slice"
 ) -> matplotlib.figure.Figure:
     """
     Plot the detector data in the full detector data frame and the
@@ -123,9 +124,18 @@ def preprocessing_detector_data_plot(
 
     log_cropped_data = np.log10(cropped_data +1)
     vmin = 0
-    vmax = np.max(log_cropped_data)
+    if slice_or_sum != "sum" and slice_or_sum != "slice":
+        raise KeyError("slice_or_sum is neither slice nor sum")
+    
+    if slice_or_sum == "sum":
+        vmax = np.max([
+            np.max(np.sum(log_cropped_data, axis = 0)),
+            np.max(np.sum(log_cropped_data, axis = 1)),
+            np.max(np.sum(log_cropped_data, axis = 2))
+            ])
+    else:
+        vmax = np.max(log_cropped_data)
     final_shape = cropped_data.shape
-
     markersize = 4
     plot_raw_data = (
         detector_data is not None
@@ -135,70 +145,140 @@ def preprocessing_detector_data_plot(
         initial_shape = detector_data.shape
         log_data = np.log10(detector_data +1)
 
-        axes[0, 0].matshow(
-            log_data[det_reference_voxel[0]],
-            vmin=vmin,
-            vmax=vmax,
-            cmap="turbo",
-            origin="upper"
-        )
-        axes[0, 0].plot(
-            np.repeat(det_reference_voxel[2], 2),
-            det_reference_voxel[1] + np.array(
-                [-0.1*initial_shape[1], 0.1*initial_shape[1]]),
-            color="w",
-            lw=0.5
-        )
-        axes[0, 0].plot(
-            det_reference_voxel[2] + np.array(
-                [-0.1*initial_shape[2], 0.1*initial_shape[2]]),
-            np.repeat(det_reference_voxel[1], 2),
-            color="w",
-            lw=0.5
-        )
-        axes[0, 1].matshow(
-            log_data[:, det_reference_voxel[1], :],
-            vmin=vmin,
-            vmax=vmax,
-            cmap="turbo",
-            origin="lower"
-        )
-        axes[0, 1].plot(
-            np.repeat(det_reference_voxel[2], 2),
-            det_reference_voxel[0] + np.array(
-                [-0.1*initial_shape[0], 0.1*initial_shape[0]]),
-            color="w", 
-            lw=0.5
-        )
-        axes[0, 1].plot(
-            det_reference_voxel[2] + np.array(
-                [-0.1*initial_shape[2], 0.1*initial_shape[2]]),
-            np.repeat(det_reference_voxel[0], 2),
-            color="w", 
-            lw=0.5
-        )
+        if slice_or_sum != "sum" and slice_or_sum != "slice":
+            raise KeyError("slice_or_sum is neither slice nor sum")
+    
+        if slice_or_sum == "sum":
+            axes[0, 0].matshow(
+                np.sum(log_data, axis = 0),
+                vmin=vmin,
+                vmax=vmax,
+                cmap="turbo",
+                origin="upper"
+            )
+            axes[0, 0].plot(
+                np.repeat(det_reference_voxel[2], 2),
+                det_reference_voxel[1] + np.array(
+                    [-0.1*initial_shape[1], 0.1*initial_shape[1]]),
+                color="w",
+                lw=0.5
+            )
+            axes[0, 0].plot(
+                det_reference_voxel[2] + np.array(
+                    [-0.1*initial_shape[2], 0.1*initial_shape[2]]),
+                np.repeat(det_reference_voxel[1], 2),
+                color="w",
+                lw=0.5
+            )
+            axes[0, 1].matshow(
+                np.sum(log_data,axis =1),
+                vmin=vmin,
+                vmax=vmax,
+                cmap="turbo",
+                origin="lower"
+            )
+            axes[0, 1].plot(
+                np.repeat(det_reference_voxel[2], 2),
+                det_reference_voxel[0] + np.array(
+                    [-0.1*initial_shape[0], 0.1*initial_shape[0]]),
+                color="w", 
+                lw=0.5
+            )
+            axes[0, 1].plot(
+                det_reference_voxel[2] + np.array(
+                    [-0.1*initial_shape[2], 0.1*initial_shape[2]]),
+                np.repeat(det_reference_voxel[0], 2),
+                color="w", 
+                lw=0.5
+            )
 
-        mappable = axes[0, 2].matshow(
-            np.swapaxes(log_data[..., det_reference_voxel[2]], axis1=0, axis2=1),
-            vmin=vmin,
-            vmax=vmax,
-            cmap="turbo",
-            origin="upper"
-        )
-        axes[0, 2].plot(
-            np.repeat(det_reference_voxel[0], 2),
-            det_reference_voxel[1] + np.array(
-                [- 0.1 * initial_shape[1],  + 0.1 * initial_shape[1]]),
-            color="w",
-            lw=0.5
-        )
-        axes[0, 2].plot(
-            det_reference_voxel[0] + np.array(
-                [- 0.1 * initial_shape[0],  + 0.1 * initial_shape[0]]),
-            np.repeat(det_reference_voxel[1], 2),
-            color="w",
-            lw=0.5
-        )
+            mappable = axes[0, 2].matshow(
+                np.swapaxes(np.sum(log_data,axis=2), axis1=0, axis2=1),
+                vmin=vmin,
+                vmax=vmax,
+                cmap="turbo",
+                origin="upper"
+            )
+            axes[0, 2].plot(
+                np.repeat(det_reference_voxel[0], 2),
+                det_reference_voxel[1] + np.array(
+                    [- 0.1 * initial_shape[1],  + 0.1 * initial_shape[1]]),
+                color="w",
+                lw=0.5
+            )
+            axes[0, 2].plot(
+                det_reference_voxel[0] + np.array(
+                    [- 0.1 * initial_shape[0],  + 0.1 * initial_shape[0]]),
+                np.repeat(det_reference_voxel[1], 2),
+                color="w",
+                lw=0.5
+            )
+        
+        elif slice_or_sum == 'slice':
+            axes[0, 0].matshow(
+                log_data[det_reference_voxel[0]],
+                vmin=vmin,
+                vmax=vmax,
+                cmap="turbo",
+                origin="upper"
+            )
+            axes[0, 0].plot(
+                np.repeat(det_reference_voxel[2], 2),
+                det_reference_voxel[1] + np.array(
+                    [-0.1*initial_shape[1], 0.1*initial_shape[1]]),
+                color="w",
+                lw=0.5
+            )
+            axes[0, 0].plot(
+                det_reference_voxel[2] + np.array(
+                    [-0.1*initial_shape[2], 0.1*initial_shape[2]]),
+                np.repeat(det_reference_voxel[1], 2),
+                color="w",
+                lw=0.5
+            )
+            axes[0, 1].matshow(
+                log_data[:, det_reference_voxel[1], :],
+                vmin=vmin,
+                vmax=vmax,
+                cmap="turbo",
+                origin="lower"
+            )
+            axes[0, 1].plot(
+                np.repeat(det_reference_voxel[2], 2),
+                det_reference_voxel[0] + np.array(
+                    [-0.1*initial_shape[0], 0.1*initial_shape[0]]),
+                color="w", 
+                lw=0.5
+            )
+            axes[0, 1].plot(
+                det_reference_voxel[2] + np.array(
+                    [-0.1*initial_shape[2], 0.1*initial_shape[2]]),
+                np.repeat(det_reference_voxel[0], 2),
+                color="w", 
+                lw=0.5
+            )
+
+            mappable = axes[0, 2].matshow(
+                np.swapaxes(log_data[..., det_reference_voxel[2]], axis1=0, axis2=1),
+                vmin=vmin,
+                vmax=vmax,
+                cmap="turbo",
+                origin="upper"
+            )
+            axes[0, 2].plot(
+                np.repeat(det_reference_voxel[0], 2),
+                det_reference_voxel[1] + np.array(
+                    [- 0.1 * initial_shape[1],  + 0.1 * initial_shape[1]]),
+                color="w",
+                lw=0.5
+            )
+            axes[0, 2].plot(
+                det_reference_voxel[0] + np.array(
+                    [- 0.1 * initial_shape[0],  + 0.1 * initial_shape[0]]),
+                np.repeat(det_reference_voxel[1], 2),
+                color="w",
+                lw=0.5
+            )
 
         if det_com_voxel:
             axes[0, 0].plot(
@@ -254,118 +334,234 @@ def preprocessing_detector_data_plot(
                 color="red",
                 label="max",
             )
+    if slice_or_sum == "sum":
+        axes[1, 0].matshow(
+            np.sum(log_cropped_data,axis = 0),
+            vmin=vmin,
+            vmax=vmax,
+            cmap="turbo",
+            origin="upper"
+        )
 
-    axes[1, 0].matshow(
-        log_cropped_data[final_shape[0]//2],
-        vmin=vmin,
-        vmax=vmax,
-        cmap="turbo",
-        origin="upper"
-    )
+        axes[1, 0].plot(
+            np.repeat(final_shape[2]//2, 2),
+            np.array([0.4*final_shape[1], 0.6*final_shape[1]]),
+            color="w",
+            lw=0.5
+        )
+        axes[1, 0].plot(
+            np.array([0.4*final_shape[2], 0.6*final_shape[2]]),
+            np.repeat(final_shape[1]//2, 2),
+            color="w",
+            lw=0.5
+        )
+        axes[1, 0].plot(
+            cropped_com_voxel[2],
+            cropped_com_voxel[1],
+            marker="x",
+            markersize=markersize,
+            color="green",
+            label="com",
+        )
+        axes[1, 0].plot(
+            cropped_max_voxel[2],
+            cropped_max_voxel[1],
+            marker="x",
+            markersize=markersize,
+            color="red",
+            label="max",
+        )
 
-    axes[1, 0].plot(
-        np.repeat(final_shape[2]//2, 2),
-        np.array([0.4*final_shape[1], 0.6*final_shape[1]]),
-        color="w",
-        lw=0.5
-    )
-    axes[1, 0].plot(
-        np.array([0.4*final_shape[2], 0.6*final_shape[2]]),
-        np.repeat(final_shape[1]//2, 2),
-        color="w",
-        lw=0.5
-    )
-    axes[1, 0].plot(
-        cropped_com_voxel[2],
-        cropped_com_voxel[1],
-        marker="x",
-        markersize=markersize,
-        color="green",
-        label="com",
-    )
-    axes[1, 0].plot(
-        cropped_max_voxel[2],
-        cropped_max_voxel[1],
-        marker="x",
-        markersize=markersize,
-        color="red",
-        label="max",
-    )
+        axes[1, 1].matshow(
+            np.sum(log_cropped_data, axis =1),
+            vmin=vmin,
+            vmax=vmax,
+            cmap="turbo",
+            origin="lower"
+        )
+        axes[1, 1].plot(
+            np.repeat(final_shape[2]//2, 2),
+            np.array([0.4*final_shape[0], 0.6*final_shape[0]]),
+            color="w",
+            lw=0.5
+        )
+        axes[1, 1].plot(
+            np.array([0.4*final_shape[2], 0.6*final_shape[2]]),
+            np.repeat(final_shape[0]//2, 2),
+            color="w",
+            lw=0.5
+        )
+        axes[1, 1].plot(
+            cropped_com_voxel[2],
+            cropped_com_voxel[0],
+            marker="x",
+            markersize=markersize,
+            linestyle="None",
+            color="green",
+            label="com",
+        )
+        axes[1, 1].plot(
+            cropped_max_voxel[2],
+            cropped_max_voxel[0],
+            marker="x",
+            markersize=markersize,
+            linestyle="None",
+            color="red",
+            label="max"
+        )
 
-    axes[1, 1].matshow(
-        log_cropped_data[:, final_shape[1]//2, :],
-        vmin=vmin,
-        vmax=vmax,
-        cmap="turbo",
-        origin="lower"
-    )
-    axes[1, 1].plot(
-        np.repeat(final_shape[2]//2, 2),
-        np.array([0.4*final_shape[0], 0.6*final_shape[0]]),
-        color="w",
-        lw=0.5
-    )
-    axes[1, 1].plot(
-        np.array([0.4*final_shape[2], 0.6*final_shape[2]]),
-        np.repeat(final_shape[0]//2, 2),
-        color="w",
-        lw=0.5
-    )
-    axes[1, 1].plot(
-        cropped_com_voxel[2],
-        cropped_com_voxel[0],
-        marker="x",
-        markersize=markersize,
-        linestyle="None",
-        color="green",
-        label="com",
-    )
-    axes[1, 1].plot(
-        cropped_max_voxel[2],
-        cropped_max_voxel[0],
-        marker="x",
-        markersize=markersize,
-        linestyle="None",
-        color="red",
-        label="max"
-    )
+        mappable = axes[1, 2].matshow(
+            np.swapaxes(
+                np.sum(log_cropped_data,axis = 2), axis1=0, axis2=1),
+            vmin=vmin,
+            vmax=vmax,
+            cmap="turbo",
+            origin="upper"
+        )
+        axes[1, 2].plot(
+            np.repeat(final_shape[0]//2, 2),
+            np.array([0.4*final_shape[1], 0.6*final_shape[1]]),
+            color="w",
+            lw=0.5
+        )
+        axes[1, 2].plot(
+            np.array([0.4*final_shape[0], 0.6*final_shape[0]]),
+            np.repeat(final_shape[1]//2, 2),
+            color="w",
+            lw=0.5
+        )
+        axes[1, 2].plot(
+            cropped_com_voxel[0],
+            cropped_com_voxel[1],
+            marker="x",
+            markersize=markersize,
+            color="green",
+            label="com"
+        )
+        axes[1, 2].plot(
+            cropped_max_voxel[0],
+            cropped_max_voxel[1],
+            marker="x",
+            markersize=markersize,
+            color="red",
+            label="max",
+        )
 
-    mappable = axes[1, 2].matshow(
-        np.swapaxes(
-            log_cropped_data[..., final_shape[2]//2], axis1=0, axis2=1),
-        vmin=vmin,
-        vmax=vmax,
-        cmap="turbo",
-        origin="upper"
-    )
-    axes[1, 2].plot(
-        np.repeat(final_shape[0]//2, 2),
-        np.array([0.4*final_shape[1], 0.6*final_shape[1]]),
-        color="w",
-        lw=0.5
-    )
-    axes[1, 2].plot(
-        np.array([0.4*final_shape[0], 0.6*final_shape[0]]),
-        np.repeat(final_shape[1]//2, 2),
-        color="w",
-        lw=0.5
-    )
-    axes[1, 2].plot(
-        cropped_com_voxel[0],
-        cropped_com_voxel[1],
-        marker="x",
-        markersize=markersize,
-        color="green",
-        label="com"
-    )
-    axes[1, 2].plot(
-        cropped_max_voxel[0],
-        cropped_max_voxel[1],
-        marker="x",
-        markersize=markersize,
-        color="red",
-        label="max",
-    )
+    elif slice_or_sum == "slice":
+        axes[1, 0].matshow(
+            log_cropped_data[final_shape[0]//2],
+            vmin=vmin,
+            vmax=vmax,
+            cmap="turbo",
+            origin="upper"
+        )
+
+        axes[1, 0].plot(
+            np.repeat(final_shape[2]//2, 2),
+            np.array([0.4*final_shape[1], 0.6*final_shape[1]]),
+            color="w",
+            lw=0.5
+        )
+        axes[1, 0].plot(
+            np.array([0.4*final_shape[2], 0.6*final_shape[2]]),
+            np.repeat(final_shape[1]//2, 2),
+            color="w",
+            lw=0.5
+        )
+        axes[1, 0].plot(
+            cropped_com_voxel[2],
+            cropped_com_voxel[1],
+            marker="x",
+            markersize=markersize,
+            color="green",
+            label="com",
+        )
+        axes[1, 0].plot(
+            cropped_max_voxel[2],
+            cropped_max_voxel[1],
+            marker="x",
+            markersize=markersize,
+            color="red",
+            label="max",
+        )
+
+        axes[1, 1].matshow(
+            log_cropped_data[:, final_shape[1]//2, :],
+            vmin=vmin,
+            vmax=vmax,
+            cmap="turbo",
+            origin="lower"
+        )
+        axes[1, 1].plot(
+            np.repeat(final_shape[2]//2, 2),
+            np.array([0.4*final_shape[0], 0.6*final_shape[0]]),
+            color="w",
+            lw=0.5
+        )
+        axes[1, 1].plot(
+            np.array([0.4*final_shape[2], 0.6*final_shape[2]]),
+            np.repeat(final_shape[0]//2, 2),
+            color="w",
+            lw=0.5
+        )
+        axes[1, 1].plot(
+            cropped_com_voxel[2],
+            cropped_com_voxel[0],
+            marker="x",
+            markersize=markersize,
+            linestyle="None",
+            color="green",
+            label="com",
+        )
+        axes[1, 1].plot(
+            cropped_max_voxel[2],
+            cropped_max_voxel[0],
+            marker="x",
+            markersize=markersize,
+            linestyle="None",
+            color="red",
+            label="max"
+        )
+
+        mappable = axes[1, 2].matshow(
+            np.swapaxes(
+                log_cropped_data[..., final_shape[2]//2], axis1=0, axis2=1),
+            vmin=vmin,
+            vmax=vmax,
+            cmap="turbo",
+            origin="upper"
+        )
+        axes[1, 2].plot(
+            np.repeat(final_shape[0]//2, 2),
+            np.array([0.4*final_shape[1], 0.6*final_shape[1]]),
+            color="w",
+            lw=0.5
+        )
+        axes[1, 2].plot(
+            np.array([0.4*final_shape[0], 0.6*final_shape[0]]),
+            np.repeat(final_shape[1]//2, 2),
+            color="w",
+            lw=0.5
+        )
+        axes[1, 2].plot(
+            cropped_com_voxel[0],
+            cropped_com_voxel[1],
+            marker="x",
+            markersize=markersize,
+            color="green",
+            label="com"
+        )
+        axes[1, 2].plot(
+            cropped_max_voxel[0],
+            cropped_max_voxel[1],
+            marker="x",
+            markersize=markersize,
+            color="red",
+            label="max",
+        )
+
+
+
 
     # handle the labels and titles
     if plot_raw_data:
@@ -624,7 +820,8 @@ def plot_q_lab_orthogonalization_process(
         q_lab_regular_grid: np.ndarray,
         where_in_det_space: Optional[tuple]=None,
         where_in_ortho_space: Optional[tuple]=None,
-        title: str=""
+        title: str="",
+        slice_or_sum: str = "slice"
 ) -> matplotlib.figure.Figure:
     """
     Plot the intensity in the detector frame, index-of-q lab frame
@@ -641,17 +838,35 @@ def plot_q_lab_orthogonalization_process(
     figsize = get_figure_size("nature", subplots=subplots)
     figure, axes = plt.subplots(
         subplots[0], subplots[1], figsize=figsize)
+    
+    print("------ inside plot----")
+    print(slice_or_sum)
 
-    axes[0, 0].matshow(np.log(detector_data[where_in_det_space[0]]+1))
-    axes[0, 0].plot(where_in_det_space[2], where_in_det_space[1],
-                    color="w", marker="x",  markersize=4)
-
-    axes[0, 1].matshow(
+    if slice_or_sum != "sum" and slice_or_sum != "slice":
+        raise KeyError("slice_or_sum is neither slice nor sum")
+    
+    if slice_or_sum == "sum":
+        print('-----------Plotting sums----------------')
+        axes[0, 0].matshow(np.log(np.sum(detector_data, axis =0)))
+        
+        axes[0, 1].matshow(np.log(np.sum(detector_data,axis =1)))
+        
+        axes[0, 2].matshow(
+            np.log(
+            np.swapaxes(
+                np.sum(detector_data, axis =2),
+                axis1=0,
+                axis2=1
+            )
+        ),
+        )
+    elif slice_or_sum == "slice":
+        axes[0, 0].matshow(np.log(detector_data[where_in_det_space[0]]+1))
+        
+        axes[0, 1].matshow(
         np.log(detector_data[:, where_in_det_space[1]]+1))
-    axes[0, 1].plot(where_in_det_space[2], where_in_det_space[0],
-                    color="w", marker="x",  markersize=4)
-
-    axes[0, 2].matshow(
+        
+        axes[0, 2].matshow(
         np.log(
             np.swapaxes(
                 detector_data[:, :, where_in_det_space[2]],
@@ -660,6 +875,15 @@ def plot_q_lab_orthogonalization_process(
             ) + 1
         ),
     )
+
+    axes[0, 0].plot(where_in_det_space[2], where_in_det_space[1],
+                    color="w", marker="x",  markersize=4)
+
+
+    axes[0, 1].plot(where_in_det_space[2], where_in_det_space[0],
+                    color="w", marker="x",  markersize=4)
+
+
     axes[0, 2].plot(where_in_det_space[0], where_in_det_space[1],
                     color="w", marker="x", markersize=4)
 
@@ -678,31 +902,58 @@ def plot_q_lab_orthogonalization_process(
         where_in_ortho_space = tuple(
             e // 2 for e in orthogonalized_data.shape)
 
-    axes[1, 0].matshow(
-        np.log(
-            np.swapaxes(orthogonalized_data[where_in_ortho_space[0]],
-            axis1=0,
-            axis2=1
-            )+1 # add 1 to avoid log(0)
-        ),
-        origin="lower"
-    )
-
-    axes[1, 1].matshow(
-        np.log(
-            np.swapaxes(
-                orthogonalized_data[:, where_in_ortho_space[1]],
+    if slice_or_sum == "sum":
+        axes[1, 0].matshow(
+            np.log(
+                np.swapaxes(np.sum(orthogonalized_data, axis = 0),
                 axis1=0,
                 axis2=1
-            )+1 # add 1 to avoid log(0)
-        ),
-        origin="lower"
-    )
+                )+1 # add 1 to avoid log(0)
+            ),
+            origin="lower"
+        )
 
-    axes[1, 2].matshow(
-        np.log(orthogonalized_data[:, :, where_in_ortho_space[2]]+1),
-        origin="lower"
-    )
+        axes[1, 1].matshow(
+            np.log(
+                np.swapaxes(
+                    np.sum(orthogonalized_data, axis =1),
+                    axis1=0,
+                    axis2=1
+                )+1 # add 1 to avoid log(0)
+            ),
+            origin="lower"
+        )
+
+        axes[1, 2].matshow(
+            np.log(np.sum(orthogonalized_data, axis= 2)),
+            origin="lower"
+            )
+    elif slice_or_sum == "slice":
+        axes[1, 0].matshow(
+            np.log(
+                np.swapaxes(orthogonalized_data[where_in_ortho_space[0]],
+                axis1=0,
+                axis2=1
+                )+1 # add 1 to avoid log(0)
+            ),
+            origin="lower"
+        )
+
+        axes[1, 1].matshow(
+            np.log(
+                np.swapaxes(
+                    orthogonalized_data[:, where_in_ortho_space[1]],
+                    axis1=0,
+                    axis2=1
+                )+1 # add 1 to avoid log(0)
+            ),
+            origin="lower"
+        )
+
+        axes[1, 2].matshow(
+            np.log(orthogonalized_data[:, :, where_in_ortho_space[2]]+1),
+            origin="lower"
+            )
 
     axes[1, 0].set_xlabel(r"y$_{lab}/$x$_{cxi}$")
     axes[1, 0].set_ylabel(r"z$_{lab}/$y$_{cxi}$")
@@ -715,41 +966,80 @@ def plot_q_lab_orthogonalization_process(
     x_array, y_array, z_array = q_lab_regular_grid
 
     # careful here, in contourf it is not the matrix convention !
-    axes[2, 0].contourf(
-        y_array, # must be the matplotlib xaxis array / numpy axis1
-        z_array, # must be the matplotlib yaxis array / numpy axis0
-        np.log(
-            np.swapaxes(
-                orthogonalized_data[where_in_ortho_space[0]]+1,
-                axis1=0,
-                axis2=1
-            )
-        ),
-        levels=100,
-    )
+    
+    if slice_or_sum == "sum":
+        axes[2, 0].contourf(
+            y_array, # must be the matplotlib xaxis array / numpy axis1
+            z_array, # must be the matplotlib yaxis array / numpy axis0
+            np.log(
+                np.swapaxes(
+                    np.sum(orthogonalized_data, axis = 0),
+                    axis1=0,
+                    axis2=1
+                )
+            ),
+            levels=100,
+        )
 
-    axes[2, 1].contourf(
-        x_array, # must be the matplotlib xaxis array / numpy axis1
-        z_array, # must be the matplotlib yaxis array / numpy axis0
-        np.log(
-            np.swapaxes(
-                orthogonalized_data[:, where_in_ortho_space[1]]+1,
-                axis1=0,
-                axis2=1
-            )
-        ),
-        levels=100,
-    )
+        axes[2, 1].contourf(
+            x_array, # must be the matplotlib xaxis array / numpy axis1
+            z_array, # must be the matplotlib yaxis array / numpy axis0
+            np.log(
+                np.swapaxes(
+                    np.sum(orthogonalized_data, axis =1),
+                    axis1=0,
+                    axis2=1
+                )
+            ),
+            levels=100,
+        )
 
-    axes[2, 2].contourf(
-        y_array, # must be the matplotlib xaxis array / numpy axis1
-        x_array, # must be the matplotlib yaxis array / numpy axis0
-        np.log(
-            orthogonalized_data[:, :, where_in_ortho_space[2]]
-            +1 # add 1 to avoid log(0)
-        ),
-        levels=100,
-    )
+        axes[2, 2].contourf(
+            y_array, # must be the matplotlib xaxis array / numpy axis1
+            x_array, # must be the matplotlib yaxis array / numpy axis0
+            np.log(
+                np.sum(orthogonalized_data, axis = 2)
+                +1 # add 1 to avoid log(0)
+            ),
+            levels=100,
+        )
+
+    elif slice_or_sum == "slice":
+        axes[2, 0].contourf(
+            y_array, # must be the matplotlib xaxis array / numpy axis1
+            z_array, # must be the matplotlib yaxis array / numpy axis0
+            np.log(
+                np.swapaxes(
+                    orthogonalized_data[where_in_ortho_space[0]]+1,
+                    axis1=0,
+                    axis2=1
+                )
+            ),
+            levels=100,
+        )
+
+        axes[2, 1].contourf(
+            x_array, # must be the matplotlib xaxis array / numpy axis1
+            z_array, # must be the matplotlib yaxis array / numpy axis0
+            np.log(
+                np.swapaxes(
+                    orthogonalized_data[:, where_in_ortho_space[1]]+1,
+                    axis1=0,
+                    axis2=1
+                )
+            ),
+            levels=100,
+        )
+
+        axes[2, 2].contourf(
+            y_array, # must be the matplotlib xaxis array / numpy axis1
+            x_array, # must be the matplotlib yaxis array / numpy axis0
+            np.log(
+                orthogonalized_data[:, :, where_in_ortho_space[2]]
+                +1 # add 1 to avoid log(0)
+            ),
+            levels=100,
+        )
     ANGSTROM_SYMBOL, _, _ = set_plot_configs()
     # axes[2, 0].set_xlabel(
     #     r"Q$_{\text{y}_{lab}}$ " + f"({ANGSTROM_SYMBOL}" + r"$^{-1})$")
@@ -804,13 +1094,16 @@ def plot_direct_lab_orthogonalization_process(
         detector_direct_space_data: np.ndarray,
         direct_lab_data: np.ndarray,
         direct_lab_regular_grid: list[np.ndarray],
-        title: str=""
+        title: str="",
+        slice_or_sum: str = "slice"
 ) -> matplotlib.figure.Figure:
     """
     Plot the intensity in the detector frame, index-of-direct lab frame
     and direct lab frame.
     """
-
+    print('inside plot_direct_lab_ortho'
+    )
+    print(slice_or_sum)
     plot_at = tuple(e // 2 for e in detector_direct_space_data.shape)
 
     subplots = (3, 3)
@@ -818,15 +1111,36 @@ def plot_direct_lab_orthogonalization_process(
     figure, axes = plt.subplots(
         subplots[0], subplots[1], figsize=figsize)
 
-    axes[0, 0].matshow(detector_direct_space_data[plot_at[0]])
-    axes[0, 1].matshow(detector_direct_space_data[:, plot_at[1]])
-    axes[0, 2].matshow(
-        np.swapaxes(
-            detector_direct_space_data[:, :, plot_at[2]],
-            axis1=0,
-            axis2=1
+
+    if slice_or_sum != "sum" and slice_or_sum != "slice":
+        raise KeyError("slice_or_sum is neither slice nor sum")
+    
+    if slice_or_sum == "sum":
+        print('-----------Plotting sums----------------')
+        axes[0, 0].matshow(np.sum(detector_direct_space_data, axis =0))
+        
+        axes[0, 1].matshow(np.sum(detector_direct_space_data,axis =1))
+        
+        axes[0, 2].matshow(
+            np.swapaxes(
+                np.sum(detector_direct_space_data, axis =2),
+                axis1=0,
+                axis2=1
+            )
+        ),
+        
+    elif slice_or_sum == "slice":
+        print('plotting slice --------------')
+        axes[0, 0].matshow(detector_direct_space_data[plot_at[0]])
+        axes[0, 1].matshow(detector_direct_space_data[:, plot_at[1]])
+        axes[0, 2].matshow(
+            np.swapaxes(
+                detector_direct_space_data[:, :, plot_at[2]],
+                axis1=0,
+                axis2=1
+            )
         )
-    )
+
 
     axes[0, 0].set_xlabel(r"detector axis$_2$")
     axes[0, 0].set_ylabel(r"detector axis$_1$")
@@ -837,56 +1151,109 @@ def plot_direct_lab_orthogonalization_process(
 
     plot_at = tuple(e // 2 for e in direct_lab_data.shape)
 
-    axes[1, 0].matshow(
-            np.swapaxes(direct_lab_data[plot_at[0]],
-            axis1=0,
-            axis2=1
-        ),
-        origin="lower"
-    )
+    if slice_or_sum == "sum":
+        print('Plotting summmmm')
+        axes[1, 0].matshow(
+                np.swapaxes(np.sum(direct_lab_data, axis =0),
+                axis1=0,
+                axis2=1
+            ),
+            origin="lower"
+        )
 
-    axes[1, 1].matshow(
-        np.swapaxes(
-            direct_lab_data[:, plot_at[1]],
-            axis1=0,
-            axis2=1
-        ),
-        origin="lower"
-    )
+        axes[1, 1].matshow(
+            np.swapaxes(
+                np.sum(direct_lab_data,axis = 1),
+                axis1=0,
+                axis2=1
+            ),
+            origin="lower"
+        )
 
-    axes[1, 2].matshow(
-        direct_lab_data[:, :, plot_at[2]],
-        origin="lower"
-    )
+        axes[1, 2].matshow(
+            np.sum(direct_lab_data, axis =2 ),
+            origin="lower"
+        )
 
-    x_array, y_array, z_array = direct_lab_regular_grid
-    axes[2, 0].contourf(
-        y_array,
-        z_array,
-        np.swapaxes(
-            direct_lab_data[plot_at[0]],
-            axis1=0,
-            axis2=1
-        ),
-        levels=100
-    )
-    axes[2, 1].contourf(
-        x_array,
-        z_array,
-        np.swapaxes(
-            direct_lab_data[:, plot_at[1]],
-            axis1=0,
-            axis2=1
-        ),
-        levels=100,
-    )
+        x_array, y_array, z_array = direct_lab_regular_grid
+        axes[2, 0].contourf(
+            y_array,
+            z_array,
+            np.swapaxes(
+                np.sum(direct_lab_data, axis = 0),
+                axis1=0,
+                axis2=1
+            ),
+            levels=100
+        )
+        axes[2, 1].contourf(
+            x_array,
+            z_array,
+            np.swapaxes(
+                np.sum(direct_lab_data,axis =1),
+                axis1=0,
+                axis2=1
+            ),
+            levels=100,
+        )
 
-    axes[2, 2].contourf(
-        y_array,
-        x_array,
-        direct_lab_data[:, :, plot_at[2]],
-        levels=100
+        axes[2, 2].contourf(
+            y_array,
+            x_array,
+            np.sum(direct_lab_data, axis =2),
+            levels=100
     )
+    elif slice_or_sum == "slice":
+        axes[1, 0].matshow(
+                np.swapaxes(direct_lab_data[plot_at[0]],
+                axis1=0,
+                axis2=1
+            ),
+            origin="lower"
+        )
+
+        axes[1, 1].matshow(
+            np.swapaxes(
+                direct_lab_data[:, plot_at[1]],
+                axis1=0,
+                axis2=1
+            ),
+            origin="lower"
+        )
+
+        axes[1, 2].matshow(
+            direct_lab_data[:, :, plot_at[2]],
+            origin="lower"
+        )
+
+        x_array, y_array, z_array = direct_lab_regular_grid
+        axes[2, 0].contourf(
+            y_array,
+            z_array,
+            np.swapaxes(
+                direct_lab_data[plot_at[0]],
+                axis1=0,
+                axis2=1
+            ),
+            levels=100
+        )
+        axes[2, 1].contourf(
+            x_array,
+            z_array,
+            np.swapaxes(
+                direct_lab_data[:, plot_at[1]],
+                axis1=0,
+                axis2=1
+            ),
+            levels=100,
+        )
+
+        axes[2, 2].contourf(
+            y_array,
+            x_array,
+            direct_lab_data[:, :, plot_at[2]],
+            levels=100
+        )
     # for ax in axes[2, :].ravel():
     #     ax.minorticks_on()
     for ax in axes.ravel():

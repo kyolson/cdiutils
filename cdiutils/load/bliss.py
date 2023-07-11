@@ -74,7 +74,8 @@ class BlissLoader():
             binning_along_axis0: int=None,
             binning_method: str="sum",
             noise_threshold: int = None,
-            floor: int = None
+            floor: int = None,
+            remove_constant: int = None
     ) -> np.ndarray:
         """Load the detector data of a given scan number."""
 
@@ -114,6 +115,19 @@ class BlissLoader():
                 raise KeyError(
                 f"Parameters noise_threshold and floor must both be given"
                 ", if the threshold function is to be used.")
+            
+        if remove_constant:
+            # try:
+            print('--------Subtracting Constant----------')
+        
+            data = data - remove_constant
+            zeros = data < 0
+            data[zeros] = 0
+
+            # except TypeError:
+            #     raise KeyError(
+            #     f"Parameters noise_threshold and floor must both be given"
+            #     ", if the threshold function is to be used.")
 
         if binning_along_axis0:
             original_dim0 = data.shape[0]

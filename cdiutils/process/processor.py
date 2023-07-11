@@ -181,7 +181,8 @@ class BcdiProcessor:
             roi=roi,
             binning_along_axis0=self.params["binning_along_axis0"],
             noise_threshold = self.params["noise_threshold"],
-            floor = self.params["floor"]
+            floor = self.params["floor"],
+            remove_constant = self.params["remove_constant"]
         )
         self.angles.update(
             self.loader.load_motor_positions(
@@ -436,10 +437,11 @@ class BcdiProcessor:
                 where_in_ortho_space,
                 title=(
                     r"From \textbf{detector frame} to \textbf{q lab frame}"
-                    f", S{self.scan}"
+                    f", S{self.scan}"),
+                slice_or_sum = self.params['slice_or_sum']
                 )
             )
-        )
+        
 
 
         # Update the preprocessing_output_shape and the det_reference_voxel
@@ -460,7 +462,8 @@ class BcdiProcessor:
                 title=(
                     "Detector data preprocessing, "
                     f"S{self.scan}"
-                )
+                ),
+                slice_or_sum = self.params['slice_or_sum']
             )
         )
 
@@ -691,6 +694,7 @@ class BcdiProcessor:
         )
 
         if self.params["debug"]:
+            print('debug is trueee')
             self.figures["direct_lab_orthogonalization"]["figure"] = (
                 plot_direct_lab_orthogonalization_process(
                     reconstructed_amplitude,
@@ -700,7 +704,8 @@ class BcdiProcessor:
                     r"From \textbf{detector frame} to "
                     r"\textbf{direct lab frame}, "
                     f"S{self.scan}"
-                    )
+                    ),
+                    slice_or_sum= self.params['slice_or_sum']
                 )
             )
 
