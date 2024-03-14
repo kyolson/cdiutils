@@ -943,7 +943,8 @@ class BcdiProcessor:
                     hkl=self.params["hkl"],
                     voxel_size=self.voxel_size,
                     phase_factor=-1,  # it came out pynx
-                    handle_defects=self.params["handle_defects"]
+                    handle_defects=self.params["handle_defects"],
+                    parameters=self.params,
                 )
         )
 
@@ -1232,6 +1233,10 @@ class BcdiProcessor:
             volumes.create_dataset(
                 "support",
                 data=self.structural_properties["support"]
+            )
+            volumes.create_dataset(
+                "surface",
+                data=self.structural_properties["surface"]
             )
             volumes.create_dataset(
                 "phase",

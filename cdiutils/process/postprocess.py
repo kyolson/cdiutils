@@ -9,6 +9,7 @@ import numpy as np
 from numpy.fft import fftn, fftshift, ifftn, ifftshift
 from skimage.restoration import unwrap_phase
 from sklearn.linear_model import LinearRegression
+import copy
 
 from cdiutils.utils import (
     CroppingHandler,
@@ -20,6 +21,7 @@ from cdiutils.utils import (
     hybrid_gradient
 )
 
+from cdiutils.process.support_processor import SupportProcessor
 
 class PostProcessor:
     """
@@ -31,7 +33,8 @@ class PostProcessor:
             complex_object: np.ndarray,
             isosurface,
             final_shape: np.ndarray | tuple | list = None,
-    ) -> tuple[np.ndarray, np.ndarray]:
+            parameters: dict = None,
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         """
         Prepare the volume by finding a smaller array shape, centering
         at the center of mass of the support, and cropping
@@ -46,21 +49,34 @@ class PostProcessor:
 
         Returns:
             tuple[np.ndarray, np.ndarray]: the cropped complex_object
-            and the associated support.
+            , the associated support, and the surface.
         """
 
-        support = make_support(
+        support_pre_crop = make_support(
             normalize(np.abs(complex_object)),
-            isosurface=isosurface,
-            nan_values=False
+            isosurface=0.2
         )
+        
+        final_shape_pre_crop = copy.copy(final_shape)
+        if final_shape_pre_crop is None:
+            final_shape_pre_crop = find_suitable_array_shape(support_pre_crop, padding=[6, 6, 6])
+        com_pre_crop = CroppingHandler.get_position(support_pre_crop, "com")
+        complex_object_pre_crop = CroppingHandler.force_centered_cropping(
+            complex_object,
+            where=com_pre_crop,
+            output_shape=final_shape_pre_crop
+        )
+        support_processor = SupportProcessor(parameters=parameters, data=normalize(np.abs(complex_object_pre_crop)), isosurface=isosurface, nan_values=False)
+        support, surface = support_processor.support_calculation()     
+
         if final_shape is None:
             final_shape = find_suitable_array_shape(support, padding=[6, 6, 6])
             print(f"[INFO] new array shape is {final_shape}")
         # center the arrays at the center of mass of the support
         com = CroppingHandler.get_position(support, "com")
+        print(f"com:  {com},   final_shape: {final_shape}")
         complex_object = CroppingHandler.force_centered_cropping(
-            complex_object,
+            complex_object_pre_crop,
             where=com,
             output_shape=final_shape
         )
@@ -69,7 +85,13 @@ class PostProcessor:
             where=com,
             output_shape=final_shape
         )
-        return complex_object, support
+        surface = CroppingHandler.force_centered_cropping(
+            surface,
+            where=com,
+            output_shape=final_shape
+        )
+
+        return complex_object, support, surface
 
     @staticmethod
     def flip_reconstruction(data: np.ndarray) -> np.ndarray:
@@ -195,7 +217,7 @@ class PostProcessor:
     @staticmethod
     def get_displacement(
             phase: np.ndarray,
-            g_vector: np.ndarray or tuple or list,
+            g_vector: np.ndarray | tuple | list,
     ) -> np.ndarray:
         """
         Calculate the displacement from phase and g_vector.
@@ -205,7 +227,7 @@ class PostProcessor:
     @staticmethod
     def get_displacement_gradient(
             displacement: np.ndarray,
-            voxel_size: np.ndarray or tuple or list,
+            voxel_size: np.ndarray | tuple | list,
             gradient_method: str = "hybrid"
     ) -> np.ndarray:
         """
@@ -240,8 +262,8 @@ class PostProcessor:
     def get_het_normal_strain(
             cls,
             displacement: np.ndarray,
-            g_vector: np.ndarray or tuple or list,
-            voxel_size: np.ndarray or tuple or list,
+            g_vector: np.ndarray | tuple | list,
+            voxel_size: np.ndarray | tuple | list,
             gradient_method: str = "hybrid",
     ) -> np.ndarray:
         """
@@ -284,11 +306,12 @@ class PostProcessor:
             cls,
             complex_object: np.ndarray,
             isosurface: np.ndarray,
-            g_vector: np.ndarray or tuple or list,
-            hkl: tuple or list,
-            voxel_size: np.ndarray or tuple or list,
+            g_vector: np.ndarray | tuple | list,
+            hkl: tuple | list,
+            voxel_size: np.ndarray | tuple | list,
             phase_factor: int = -1,
             handle_defects: bool = False,
+            parameters: dict = None,
     ) -> dict:
         """
         Main method used in the post-processing workflow. The method
@@ -321,8 +344,10 @@ class PostProcessor:
             methods, d-spacing, lattice parameter 3D maps. hkl, g_vector
             and voxel size are also returned.
         """
-        complex_object, support = cls.prepare_volume(
-            complex_object, isosurface=isosurface)
+        complex_object, support, surface = cls.prepare_volume(
+            complex_object, isosurface=isosurface,
+            final_shape = None, parameters=parameters
+            )
         # extract phase and amplitude
         amplitude = np.abs(complex_object)
         phase = np.angle(complex_object) * phase_factor
@@ -406,6 +431,7 @@ class PostProcessor:
         return {
             "amplitude": normalize(amplitude),
             "support": nan_to_zero(support),
+            "surface": nan_to_zero(surface),
             "phase": nan_to_zero(phase),
             "displacement": displacement,
             "displacement_gradient": displacement_gradient,

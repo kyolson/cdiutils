@@ -77,7 +77,7 @@ def make_support(
 
 
 def unit_vector(
-        vector: tuple or list or np.ndarray
+        vector: tuple | list | np.ndarray
     )->  np.ndarray:
     """Return a unit vector."""
     return np.array(vector) / np.linalg.norm(vector)
@@ -142,8 +142,8 @@ def find_max_pos(data: np.ndarray) -> tuple:
 
 
 def shape_for_safe_centered_cropping(
-        data_shape: tuple or np.ndarray or list,
-        position: tuple or np.ndarray or list,
+        data_shape: tuple | np.ndarray | list,
+        position: tuple | np.ndarray | list,
         final_shape: Optional[tuple] = None
 ) -> tuple:
     """
@@ -293,7 +293,7 @@ def crop_at_center(
 
 def compute_distance_from_com(
         data: np.ndarray,
-        com: tuple or list or np.ndarray = None
+        com: tuple | list | np.ndarray = None
 ) -> np.ndarray:
     """
     Return a np.ndarray of the same shape of the provided data.
